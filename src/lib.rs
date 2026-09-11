@@ -7,6 +7,7 @@ use std::task::{Context, Poll, ready};
 use futures::stream::Fuse;
 use futures::{Stream, StreamExt, TryStream, TryStreamExt};
 
+// TODO: Could probably also use futures `Sink` trait here and add extra traits for termination handling.
 pub trait Sink<T> {
     type Error;
 
@@ -23,6 +24,8 @@ pub trait Sink<T> {
     fn is_terminated(&self) -> bool;
 }
 
+// TODO: Could probably also use a regular Future trait here and add extra traits for termination
+// and abortion.
 pub trait Source {
     type Error;
 
@@ -93,6 +96,11 @@ where
     fn poll_resume(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         let this = self.get_mut();
 
+        // TODO: This will need a state machine since we're entering different modes which - as soon
+        // as anything upstream returns a pending state - will get lost otherwise and never polled
+        // again.
+        //
+        // TODO: Need to verify termination and error flows.
         loop {
             match this.stream.try_poll_next_unpin(cx) {
                 Poll::Ready(Some(Ok(item))) => {
@@ -139,6 +147,7 @@ where
     }
 }
 
+// TODO: Could replace poll_resume altogether with just a future which runs this whole thing?
 impl<'a, Si, St, Ok, Error> Future for SendAll<'_, Si, St>
 where
     Si: Sink<Ok, Error = Error> + Unpin + ?Sized,
@@ -205,6 +214,8 @@ where
 {
     type Error = Si::Error;
 
+    // TODO: A proper processor would do async work here and might also yield more items than it got
+    // written to.
     fn poll_write(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -267,6 +278,7 @@ where
     }
 
     fn poll_close(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        // TODO: Handle termination here.
         Poll::Ready(Ok(()))
     }
 
