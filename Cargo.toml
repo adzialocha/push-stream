@@ -1,0 +1,12 @@
+[package]
+name = "push-stream"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+futures = "0.3.34"
+pin-project-lite = "0.2.17"
+thiserror = "2.0.21"
+
+[dev-dependencies]
+tokio = { version = "1.53.3", features = ["macros", "rt", "time"] }
